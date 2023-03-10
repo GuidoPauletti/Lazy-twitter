@@ -7,12 +7,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 class PostListView(ListView):
     model = Post
     ordering = ['-date_posted']
-    paginate_by = 2
+    paginate_by = 5
 
 class UserPostListView(ListView):
     model = Post
     template_name = 'blog/user_posts.html'
-    paginate_by = 2
+    paginate_by = 5
 
     def get_queryset(self):
         user = get_object_or_404(User, username=self.kwargs.get("username"))
