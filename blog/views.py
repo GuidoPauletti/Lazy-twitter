@@ -1,8 +1,12 @@
+import openai
+import os
 from .models import Post
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
+openai.api_key = os.environ['OpenAI_SecretKey']
 
 class PostListView(ListView):
     model = Post
@@ -23,12 +27,32 @@ class PostDetailView(DetailView):
 
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
-    fields = ['title', 'content']
+    fields = ['title']
     success_url = '/'
 
     def form_valid(self, form):
-        form.instance.author = self.request.user
+        title = form.cleaned_data['title']
+        prompt = f"Write content for a post with the following title: '{title}'."
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages = [
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1024,
+            n=1,
+            stop=None,
+            temperature=0.5
+        )
+        post_text = response['choices'][0]['message']['content']
+        post = form.save(commit=False)
+        post.author = self.request.user
+        post.content = post_text
+        post.save()
         return super().form_valid(form)
+
+    #def form_valid(self, form):
+        #form.instance.author = self.request.user
+        #return super().form_valid(form)
 
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
