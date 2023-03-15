@@ -32,7 +32,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         title = form.cleaned_data['title']
-        prompt = f"Write content for a post with the following title: '{title}'."
+        prompt = f"Write content for a post with the following title: '{title}'. Without mentioning that you are a lenguage model"
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages = [
@@ -46,7 +46,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         post_text = response['choices'][0]['message']['content']
         post = form.save(commit=False)
         post.author = self.request.user
-        post.content = post_text
+        post.content = post_text.replace("\n", "", 2)
         post.save()
         return super().form_valid(form)
 
